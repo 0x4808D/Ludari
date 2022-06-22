@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "is-admin": "3.0.0",
+    "nexe": "^4.0.0-rc.1",
+    "node-fetch": "2",
+    "node-powershell": "^5.0.1",
+    "uuid": "^8.3.2"
+  }
+}
