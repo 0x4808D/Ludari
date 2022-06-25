@@ -7,6 +7,7 @@ const execFile = require('child_process').spawn;
 
 const BASE_URL = "aHR0cHM6Ly9tYXBsZXN0YXJzMi50by9hcGkv";
 const EXE_PATH = "Li94NjQvTWFwbGVTdGFyczIuZXhl";
+const XML_HASH = "8a0f6bffe08d6582062be9d37563ad9b45f6c530be0989609005888b917adbd9";
 
 function getString(input) {
     const buff = Buffer.from(input, 'base64');
@@ -145,7 +146,8 @@ function saveInfo(username, password, fingerprint) {
     const loginCookies = getCookies(loginResponse);
 
     const tokenResponse = await getLoginToken({
-        fingerprint: loginData.fingerprint
+        fingerprint: loginData.fingerprint,
+        id: XML_HASH,
     }, loginCookies);
 
     const data = await tokenResponse.json();
