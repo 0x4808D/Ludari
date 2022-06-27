@@ -6,8 +6,6 @@ const fs = require('fs');
 const execFile = require('child_process').spawn;
 
 const BASE_URL = "aHR0cHM6Ly9tYXBsZXN0YXJzMi50by9hcGkv";
-const EXE_PATH = "Li94NjQvTWFwbGVTdGFyczIuZXhl";
-const XML_HASH = "8a0f6bffe08d6582062be9d37563ad9b45f6c530be0989609005888b917adbd9";
 
 function getString(input) {
     const buff = Buffer.from(input, 'base64');
@@ -87,8 +85,8 @@ function getCookies(response) {
     }).join(';');
 }
 
-function launchClient(token) {
-    const client = execFile(getString(EXE_PATH), [`/sid:0`, `/passport:${token}`], {
+function launchClient(exePath, token) {
+    const client = execFile(getString(exePath), [`/sid:0`, `/passport:${token}`], {
         detached: true,
     });
     client.unref();
@@ -112,6 +110,26 @@ function saveInfo(username, password, fingerprint) {
     fs.writeFileSync('ludari.session', `${saveString(username)}\n${saveString(password)}\n${fingerprint}`);
 }
 
+function getConfig() {
+    try {
+        const data = fs.readFileSync('ludari.config', 'utf8');
+        const info = data.split('\n');
+        return {
+            xmlHash: info.find(s => s.startsWith('xmlHash')).split('=')[1],
+            exePath: info.find(s => s.startsWith('exePath')).split('=')[1]
+        };
+    } catch (e) {
+        fs.writeFileSync('ludari.config', 
+`#Please verify Xml.m2h hash via /patcher_storage/<latest-uuid>.json
+xmlHash=ee922ce968cd9768e23e1b121c3e3202efd799e0093eb8c9d24d9ee56c85014b
+#EXE Path (Base 64 encoded)
+exePath=Li94NjQvTWFwbGVTdGFyczIuZXhl
+`
+        );
+        return null;
+    }
+}
+
 (async () => {
     const hasAdmin = await isAdmin();
     if (!hasAdmin) {
@@ -120,6 +138,12 @@ function saveInfo(username, password, fingerprint) {
         process.exit(1);
     }
 
+    const config = getConfig();
+    if (!config) {
+        console.log('Config created, please check the Xml.m2h hash!')
+        await new Promise(r => setTimeout(() => { r() }, 5000));
+        process.exit(1);
+    }
     const saved = getSavedInfo();
 
     const loginData = saved ?? {
@@ -147,12 +171,12 @@ function saveInfo(username, password, fingerprint) {
 
     const tokenResponse = await getLoginToken({
         fingerprint: loginData.fingerprint,
-        id: XML_HASH,
+        id: config.xmlHash,
     }, loginCookies);
 
     const data = await tokenResponse.json();
 
-    launchClient(data.data);
+    launchClient(config.exePath, data.data);
     await new Promise(r => setTimeout(() => { r() }, 1000));
     process.exit(1);
 })();
